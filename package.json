@@ -1,0 +1,23 @@
+{
+  "name": "doc-intelligence-scanner",
+  "version": "1.0.0",
+  "description": "Standalone AI document-extraction microservice, extracted from the Salesforce IntelligenceScanner LWC so it can be called from any system (Salesforce, other CRMs, custom apps) over a plain REST API.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "mammoth": "^1.12.1"
+  },
+  "license": "UNLICENSED"
+}

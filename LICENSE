@@ -1,0 +1,11 @@
+Copyright (c) 2026. All rights reserved.
+
+This software and associated documentation are proprietary. No license,
+express or implied, is granted to use, copy, modify, merge, publish,
+distribute, sublicense, or sell copies of this software, except as
+separately agreed in writing by the copyright holder.
+
+This mirrors the "UNLICENSED" designation in package.json. If you intend to
+open-source this project, replace this file with the license text of your
+choice (MIT, Apache-2.0, etc.) and update the `license` field in
+package.json to match.

@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: Doc Intelligence Scanner
+  version: 1.0.0
+  description: Standalone AI document-extraction API. See README.md for integration guides.
+servers:
+  - url: https://doc-scanner.yourcompany.com
+security:
+  - apiKeyAuth: []
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: OK
+  /v1/document-types:
+    get:
+      summary: List supported document type hints
+      responses:
+        '200':
+          description: OK
+  /v1/extract:
+    post:
+      summary: Extract fields from a PDF/image document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [base64Data, mimeType]
+              properties:
+                base64Data:
+                  type: string
+                  description: Base64-encoded file bytes, no data: prefix
+                mimeType:
+                  type: string
+                  enum:
+                    - application/pdf
+                    - image/png
+                    - image/jpeg
+                    - image/webp
+                    - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+                documentType:
+                  type: string
+                  enum: [Invoice, Passport, Medical_Report, Contract, Resume, Scanned_Document, Auto]
+                provider:
+                  type: string
+                  enum: [claude, gemini, openai]
+      responses:
+        '200':
+          description: Extraction result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResult'
+  /v1/extract-text:
+    post:
+      summary: Extract fields from pre-extracted plain text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentText]
+              properties:
+                documentText:
+                  type: string
+                documentType:
+                  type: string
+                provider:
+                  type: string
+                  enum: [claude, gemini, openai]
+      responses:
+        '200':
+          description: Extraction result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResult'
+  /v1/connectors:
+    get:
+      summary: List registered CRM connectors and the credentials each one needs
+      responses:
+        '200':
+          description: Connector registry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connectors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectorMeta'
+  /v1/connectors/webhook/submit:
+    post:
+      summary: Push extracted field values to any HTTPS webhook (universal fallback connector)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUrl, fieldValues]
+              properties:
+                targetUrl:
+                  type: string
+                  description: Must be https:// and not a private/loopback address
+                authHeader:
+                  type: string
+                  description: Optional Authorization header value forwarded to targetUrl
+                fieldValues:
+                  type: object
+      responses:
+        '200':
+          description: Delivered
+  /v1/connectors/{crmId}/objects:
+    post:
+      summary: List creatable object/record types for a registered CRM connector
+      parameters:
+        - $ref: '#/components/parameters/CrmId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credentials]
+              properties:
+                credentials:
+                  type: object
+                  description: Shape depends on the connector's authType - see GET /v1/connectors
+      responses:
+        '200':
+          description: Creatable objects for this connector
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  objects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ObjectOption'
+  /v1/connectors/{crmId}/fields:
+    post:
+      summary: Describe creatable fields/properties for one object on a registered CRM connector
+      parameters:
+        - $ref: '#/components/parameters/CrmId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credentials, objectApiName]
+              properties:
+                credentials:
+                  type: object
+                objectApiName:
+                  type: string
+      responses:
+        '200':
+          description: Creatable fields for the given object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fields:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FieldOption'
+  /v1/connectors/{crmId}/create:
+    post:
+      summary: Create a record in a registered CRM connector
+      parameters:
+        - $ref: '#/components/parameters/CrmId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credentials, objectApiName, fieldValues]
+              properties:
+                credentials:
+                  type: object
+                objectApiName:
+                  type: string
+                fieldValues:
+                  type: object
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+components:
+  parameters:
+    CrmId:
+      name: crmId
+      in: path
+      required: true
+      description: A connector id from GET /v1/connectors (e.g. salesforce, hubspot)
+      schema:
+        type: string
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    ExtractedField:
+      type: object
+      properties:
+        fieldName:
+          type: string
+        fieldValue:
+          type: string
+        confidence:
+          type: number
+          nullable: true
+    ExtractionResult:
+      type: object
+      properties:
+        documentType:
+          type: string
+          nullable: true
+        rawText:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractedField'
+        errorMessage:
+          type: string
+          nullable: true
+    ConnectorMeta:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        authType:
+          type: string
+          enum: [bearer, apiKeyHeader, basic, oauth2ClientCredentials]
+        credentialFields:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              label:
+                type: string
+              secret:
+                type: boolean
+              placeholder:
+                type: string
+    ObjectOption:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+    FieldOption:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+        required:
+          type: boolean

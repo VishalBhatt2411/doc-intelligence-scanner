@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Doc Intelligence Scanner</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Doc Intelligence Scanner</h1>
+    <button id="settingsBtn" class="btn btn-ghost" type="button">⚙ Settings</button>
+  </header>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" id="settingsForm">
+      <h2>Connection settings</h2>
+      <p class="hint">Stored only in this browser's localStorage - never sent anywhere except as the
+        <code>x-api-key</code> header on requests to the API base URL below.</p>
+
+      <label>API base URL
+        <input type="text" id="apiBaseUrl" placeholder="http://localhost:8787" />
+      </label>
+      <label>API key
+        <input type="password" id="apiKey" placeholder="paste your API_KEYS value" />
+      </label>
+      <label>AI provider
+        <select id="aiProviderOverride">
+          <option value="">Use server default</option>
+          <option value="gemini">Gemini</option>
+          <option value="openai">OpenAI</option>
+          <option value="claude">Claude</option>
+        </select>
+      </label>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn btn-ghost" type="submit">Close</button>
+        <button value="save" id="saveSettingsBtn" class="btn btn-brand" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <main>
+    <section class="upload-panel">
+      <label class="field-inline">
+        Document type
+        <select id="documentType">
+          <option value="Auto">Auto-detect</option>
+          <option value="Invoice">Invoice</option>
+          <option value="Passport">Passport</option>
+          <option value="Medical_Report">Medical Report</option>
+          <option value="Contract">Contract</option>
+          <option value="Resume">Resume</option>
+          <option value="Scanned_Document">Scanned Document</option>
+        </select>
+      </label>
+
+      <div id="dropZone" class="drop-zone" tabindex="0">
+        <p><strong>Drag &amp; drop</strong> a document here, or click to browse</p>
+        <p class="hint">PDF · JPG/PNG/WEBP · DOCX</p>
+        <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.docx" hidden />
+      </div>
+    </section>
+
+    <section id="fileList" class="file-list"></section>
+  </main>
+
+  <template id="fileCardTemplate">
+    <article class="file-card">
+      <header class="file-card-header">
+        <span class="file-name"></span>
+        <span class="badge status-badge">Ready</span>
+        <button class="btn btn-ghost remove-btn" type="button" title="Remove">✕</button>
+      </header>
+
+      <div class="file-card-body">
+        <div class="error-box" hidden></div>
+        <div class="progress-box" hidden><span class="spinner"></span> <span class="progress-text"></span></div>
+
+        <div class="results-box" hidden>
+          <p class="detected-type"></p>
+          <table class="fields-table">
+            <thead><tr><th>Field</th><th>Value</th><th>Map to (target field)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <datalist class="crm-fields-datalist"></datalist>
+
+          <!-- Only registered CRM connectors are offered as destinations
+               (see src/connectors/registry.js - currently Salesforce and
+               HubSpot). Each tab + credential panel is appended dynamically
+               by app.js from GET /v1/connectors, so this container is
+               intentionally empty in markup. -->
+          <div class="destination-tabs"></div>
+
+          <p class="submit-result"></p>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
